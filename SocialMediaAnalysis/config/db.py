@@ -17,4 +17,4 @@ except Exception as e:
     print(e)
 
 db = con.user_db
-collection_name = db["Call_Collection"]
+collection_name = db["SocialMedia_Collection"]
