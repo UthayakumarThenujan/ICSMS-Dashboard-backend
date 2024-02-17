@@ -6,7 +6,11 @@ def userEntity(item) -> dict:
         "id": str(item["_id"]),
         "email": item["email"],
         "password": item["password"],
-        "Organization": item["Organization"],
+        "organization": item["organization"],
+        "role": item["role"],
+        "name": item["name"],
+        "username": item["username"],
+        "contact": item["contact"],
     }
 
 
@@ -20,6 +24,10 @@ def serializeDict(item) -> dict:
         "name": item["name"],
         "email": item["email"],
         "password": item["password"],
+        "role": item["role"],
+        "name": item["name"],
+        "username": item["username"],
+        "contact": item["contact"],
     }
 
 
