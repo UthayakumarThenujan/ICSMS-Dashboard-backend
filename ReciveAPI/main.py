@@ -1,10 +1,10 @@
 from fastapi import FastAPI
-from routes.user import user
+from routes.user import router
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-# 8000
+
 app = FastAPI()
 
 origins = ["*"]
@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user)
+app.include_router(router)
 
 if __name__ == "__main__":
     # Specify the host and port here
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=8005)

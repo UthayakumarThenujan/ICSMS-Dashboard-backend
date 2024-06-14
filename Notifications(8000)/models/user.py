@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from starlette.requests import Request
 from bson import ObjectId
+from typing import List,Dict
 
 class Notification(BaseModel):
     email: str
@@ -10,7 +11,7 @@ class Notification(BaseModel):
     status: str = "UNREAD" #READ,UNREAD
 
 class UpdateNoti(BaseModel):
-    id: str
+    id: List[Dict[str, str]]
     # email: str
     # alert: str
     # status: str

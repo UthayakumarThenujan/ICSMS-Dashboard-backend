@@ -25,3 +25,7 @@ class WidgetRequest(BaseModel):
 
 class Token(BaseModel):
     token:str
+
+class BarChart(BaseModel):
+    collections:List[str]
+    date_range:List[str]
