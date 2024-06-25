@@ -30,7 +30,7 @@ def EmailcallsEntity(entity) -> list:
     return [EmailcallEntity(item) for item in entity]
 
 def WidgetsEntry(item) -> dict:
-    return {
+    widget_entry = {
         "id": str(item["_id"]),
         "title": str(item["title"]),
         "chartType": str(item["chartType"]),
@@ -39,6 +39,13 @@ def WidgetsEntry(item) -> dict:
         "email": str(item["email"]),
         "grid": dict(item["grid"]),
     }
+
+    widget_entry["xAxis"] = str(item.get("xAxis", ""))
+    widget_entry["yAxis"] = str(item.get("yAxis", ""))
+    widget_entry["topics"] = item.get("topics", [])
+        # widget_entry["yAxis"] = str(item.get("yAxis", ""))
+
+    return widget_entry
 
 
 def WidgetEntry(entity) -> list:

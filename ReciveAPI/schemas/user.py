@@ -4,9 +4,6 @@ from fastapi import HTTPException
 def userEntity(item) -> dict:
     return {
         "id": str(item["_id"]),
-        "email": item["email"],
-        "password": item["password"],
-        "Organization": item["Organization"],
     }
 
 
