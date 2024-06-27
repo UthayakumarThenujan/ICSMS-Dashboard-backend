@@ -95,7 +95,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./Charts/
+          context: ./Charts(8002)
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/icsms-chart-api:latest
           platforms: linux/arm64
