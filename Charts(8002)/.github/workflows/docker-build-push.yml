@@ -59,7 +59,7 @@ name: Build, Push, and Deploy Docker Image
 on:
   push:
     branches:
-      - wilba-2
+      - main
 
 
 jobs:
