@@ -1,4 +1,4 @@
-from models.user import WidgetRequest,Token,BarChart,GridItemsUpdateRequest
+from models.user import WidgetRequest,Token,BarChart,GridItemsUpdateRequest,GridStatusUpdateRequest
 from config.db import call_collection,email_collection,social_collection,widget_collection
 from schemas.user import callsEntity,WidgetEntry,bartChartsEntry,EmailcallsEntity
 import time
@@ -59,6 +59,15 @@ with urllib.request.urlopen(keys_url) as f:
     response = f.read()
 keys = json.loads(response.decode('utf-8'))['keys']
 
+@user.post("/newWidget")
+async def new_widget(request: WidgetRequest, email: str = Depends(get_current_user)):
+    try:
+        widget_dict = request.widget.dict()
+        widget_dict['email'] = email
+        widget_collection.insert_one(widget_dict)
+        return {"message": "New widget added", "success": True}
+    except HTTPException:
+        return {"success": False}
 
 @user.get("/widgetsUser")
 async def widgetsUser(email: str = Depends(get_current_user)):
@@ -83,6 +92,18 @@ async def update_grid_items(request: GridItemsUpdateRequest, email: str = Depend
     except Exception as e:
         return {"success": False, "message": str(e)}
 
+@user.post("/gridStatus")
+async def update_grid_items(request: GridStatusUpdateRequest, email: str = Depends(get_current_user)):
+    global gridChange
+    gridChange =True
+    try:
+        widget_collection.update_one(
+                {"_id": ObjectId(request.id), "email": email},
+                {"$set": {"status": request.status}}
+            )
+        return {"message": "Grid status updated", "success": True}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
     
 @user.get("/chartData")
 async def chartData(email: str = Depends(get_current_user)):
@@ -95,7 +116,9 @@ async def chartData(email: str = Depends(get_current_user)):
         return False
 
 @user.delete("/gridDeleted/{id}")
-async def delete_widget(id: str):
+async def delete_widget(id: str,email: str = Depends(get_current_user)):
+    print(email)
+    print(id)
     try:
         object_id = ObjectId(id)
     except:
@@ -304,15 +327,7 @@ async def websocket_endpoint(websocket: WebSocket):
         connected_clients.remove(websocket)
 
 
-@user.post("/newWidget")
-async def new_widget(request: WidgetRequest, email: str = Depends(get_current_user)):
-    try:
-        widget_dict = request.widget.dict()
-        widget_dict['email'] = email
-        widget_collection.insert_one(widget_dict)
-        return {"message": "New widget added", "success": True}
-    except HTTPException:
-        return {"success": False}
+
 
 # @user.post("/user_email/")
 # async def validateAndUsername(token: Token):

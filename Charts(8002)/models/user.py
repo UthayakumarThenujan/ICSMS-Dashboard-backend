@@ -21,6 +21,7 @@ class Widget(BaseModel):
     sources: List[str]
     keywords: List[str]
     grid: Dict
+    status:str
 
 class WidgetRequest(BaseModel):
     widget: Widget
@@ -41,3 +42,7 @@ class GridItemUpdateRequest(BaseModel):
 
 class GridItemsUpdateRequest(BaseModel):
     items: List[GridItemUpdateRequest]
+
+class GridStatusUpdateRequest(BaseModel):
+    id:str
+    status:str

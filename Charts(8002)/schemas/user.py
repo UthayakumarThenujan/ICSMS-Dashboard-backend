@@ -38,6 +38,7 @@ def WidgetsEntry(item) -> dict:
         "keywords": item["keywords"],
         "email": str(item["email"]),
         "grid": dict(item["grid"]),
+        "status": str(item["status"]),
     }
 
     widget_entry["xAxis"] = str(item.get("xAxis", ""))
