@@ -1,9 +1,8 @@
 from fastapi import FastAPI
-from routes.user import router, watch_all_collections, process_initial_documents, start_async_loop
+from routes.user import router, watch_all_collections, process_initial_documents
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
-from threading import Thread
 
 app = FastAPI()
 
@@ -19,18 +18,18 @@ app.add_middleware(
 
 app.include_router(router)
 
-if __name__ == "__main__":
-    # Create a new asyncio event loop
-    loop = asyncio.new_event_loop()
-    t = Thread(target=start_async_loop, args=(loop,), daemon=True)
-    t.start()
+@app.on_event("startup")
+async def on_startup():
+    # Create an event loop
+    loop = asyncio.get_event_loop()
 
     # Process initial documents
-    future = asyncio.run_coroutine_threadsafe(process_initial_documents(), loop)
-    future.result()  # Wait for the initial processing to complete
+    await process_initial_documents()
+    print("initial data analys ended")
+    # Start watching collections after initialization is done
+    await watch_all_collections(loop)
 
-    # Schedule the watch_all_collections coroutine on the new event loop
-    asyncio.run_coroutine_threadsafe(watch_all_collections(loop), loop)
 
-    # Specify the host and port here
+if __name__ == "__main__":
+    # Run the FastAPI application using uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8005)

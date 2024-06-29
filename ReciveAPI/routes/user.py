@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from models.user import EmailData, CallData, SocialData,Inquiry,Issue
+from datetime import datetime
+from pymongo import DESCENDING
 from config.db import (
     callDB_collection,
     emailDB_collection,
@@ -335,9 +337,18 @@ async def watch_all_collections(loop):
     await asyncio.gather(*tasks)
 
 
+def get_latest_date(collection, date_field):
+    latest_document = collection.find_one(sort=[(date_field, DESCENDING)])
+    if latest_document and date_field in latest_document:
+        return latest_document[date_field]
+    return None
+
+# Updated process_initial_documents function
 async def process_initial_documents():
-    async def process_email():
-        email_messages = read_EmailMessages_collection.find()
+    print("initial data analys started")
+    async def process_email(latest_date):
+        query = {"datetime": {"$gte": latest_date}} if latest_date else {}
+        email_messages = read_EmailMessages_collection.find(query)
         for message in email_messages:
             email_data = EmailData(
                 time=message["datetime"].isoformat(),
@@ -345,10 +356,11 @@ async def process_initial_documents():
                 sender=message["sender"],
                 topics=message["topics"],
             )
-            await receive_email_data(email_data,'email_messages')
+            await receive_email_data(email_data, 'email_messages')
 
-    async def process_calls():
-        call_messages = call_collection.find()
+    async def process_calls(latest_date):
+        query = {"call_date": {"$gte": latest_date}} if latest_date else {}
+        call_messages = call_collection.find(query)
         for message in call_messages:
             call_data = CallData(
                 _id=str(message["_id"]),
@@ -362,8 +374,9 @@ async def process_initial_documents():
             )
             await receive_call_data(call_data)
 
-    async def process_social_comments():
-        social_comments = social_Comment_collection.find()
+    async def process_social_comments(latest_date):
+        query = {"date": {"$gte": latest_date}} if latest_date else {}
+        social_comments = social_Comment_collection.find(query)
         for comment in social_comments:
             if "s_score" in comment:
                 social_data = SocialData(
@@ -374,8 +387,9 @@ async def process_initial_documents():
                 )
                 await receive_social_data(social_data)
 
-    async def process_social_subcomments():
-        social_subcomments = social_SubComment_collection.find()
+    async def process_social_subcomments(latest_date):
+        query = {"date": {"$gte": latest_date}} if latest_date else {}
+        social_subcomments = social_SubComment_collection.find(query)
         for subcomment in social_subcomments:
             if "s_score" in subcomment:
                 social_data = SocialData(
@@ -386,72 +400,81 @@ async def process_initial_documents():
                 )
                 await receive_social_data(social_data)
 
-    async def process_social_keywords():
-        social_subcomments = social_IdentifiedKeywords_collection.find()
-        for subcomment in social_subcomments:
-            keywords = subcomment["identified_keyword"]
+    async def process_social_keywords(latest_date):
+        query = {"date": {"$gte": latest_date}} if latest_date else {}
+        social_keywords = social_IdentifiedKeywords_collection.find(query)
+        for keyword in social_keywords:
+            keywords = keyword["identified_keyword"]
             if not isinstance(keywords, list):
                 keywords = [keywords]
 
             social_data = SocialData(
-                time=subcomment["date"].isoformat(),
+                time=keyword["date"].isoformat(),
                 our_sentiment_score=0.0,
                 keywords=keywords,
                 products=[]
             )
             await receive_social_data(social_data)
 
-
-    async def process_social_products():
-        social_subcomments = social_IdentifiedProducts_collection.find()
-        for subcomment in social_subcomments:
-            products = subcomment["identified_product"]
+    async def process_social_products(latest_date):
+        query = {"date": {"$gte": latest_date}} if latest_date else {}
+        social_products = social_IdentifiedProducts_collection.find(query)
+        for product in social_products:
+            products = product["identified_product"]
             if not isinstance(products, list):
                 products = [products]
 
             social_data = SocialData(
-                time=subcomment["date"].isoformat(),
+                time=product["date"].isoformat(),
                 our_sentiment_score=0.0,
                 keywords=[],
                 products=products
             )
             await receive_social_data(social_data)
 
-
-    async def process_email_issue():
-        social_subcomments = read_Issues_collection.find()
-        for subcomment in social_subcomments:
-
-            social_data = Issue(
-                time=subcomment["start_time"].isoformat(),
-                status=subcomment["status"],
-                issue_type= subcomment["issue_type"],
-                sentiment_score= subcomment["sentiment_score"],
-                products=subcomment['products']
+    async def process_email_issue(latest_date):
+        query = {"start_time": {"$gte": latest_date}} if latest_date else {}
+        email_issues = read_Issues_collection.find(query)
+        for issue in email_issues:
+            email_data = Issue(
+                time=issue["start_time"].isoformat(),
+                status=issue["status"],
+                issue_type=issue["issue_type"],
+                sentiment_score=issue["sentiment_score"],
+                products=issue["products"]
             )
-            await receive_email_data(social_data,'email_issue')
+            await receive_email_data(email_data, 'email_issue')
 
-    async def process_email_inquiry():
-        social_subcomments = read_Inquiries_collection.find()
-        for subcomment in social_subcomments:
-
-            social_data =Inquiry(
-                time=subcomment["start_time"].isoformat(),
-                status=subcomment["status"],
-                inquiry_type= subcomment["inquiry_type"],
-                sentiment_score= subcomment["sentiment_score"],
-                products=subcomment['products']
+    async def process_email_inquiry(latest_date):
+        query = {"start_time": {"$gte": latest_date}} if latest_date else {}
+        email_inquiries = read_Inquiries_collection.find(query)
+        for inquiry in email_inquiries:
+            email_data = Inquiry(
+                time=inquiry["start_time"].isoformat(),
+                status=inquiry["status"],
+                inquiry_type=inquiry["inquiry_type"],
+                sentiment_score=inquiry["sentiment_score"],
+                products=inquiry["products"]
             )
-            
-            await receive_email_data(social_data,'email_inquiry')
+            await receive_email_data(email_data, 'email_inquiry')
+
+    # Get the latest dates
+    latest_email_date = get_latest_date(emailDB_collection, "datetime")
+    latest_call_date = get_latest_date(callDB_collection, "call_date")
+    latest_social_date = get_latest_date(socialDB_collection, "date")
+    # latest_social_subcomment_date = get_latest_date(social_SubComment_collection, "date")
+    # latest_social_keyword_date = get_latest_date(social_IdentifiedKeywords_collection, "date")
+    # latest_social_product_date = get_latest_date(social_IdentifiedProducts_collection, "date")
+    # latest_email_issue_date = get_latest_date(read_Issues_collection, "start_time")
+    # latest_email_inquiry_date = get_latest_date(read_Inquiries_collection, "start_time")
 
     await asyncio.gather(
-        process_email(),
-        process_calls(),
-        process_social_comments(),
-        process_social_subcomments(),
-        process_social_keywords(),
-        process_social_products(),
-        process_email_issue(),
-        process_email_inquiry()
+        process_email(latest_email_date),
+        process_calls(latest_call_date),
+        process_social_comments(latest_social_date),
+        process_social_subcomments(latest_social_date),
+        process_social_keywords(latest_social_date),
+        process_social_products(latest_social_date),
+        process_email_issue(latest_email_date),
+        process_email_inquiry(latest_email_date)
     )
