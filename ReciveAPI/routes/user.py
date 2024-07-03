@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from models.user import EmailData, CallData, SocialData,Inquiry,Issue
 from datetime import datetime
+from threading import Thread
 from pymongo import DESCENDING
 from config.db import (
     callDB_collection,
@@ -317,12 +318,6 @@ async def process_changed_document(collection, changed_id, name):
 async def watch_collection(collection_name, name, loop):
     await asyncio.get_running_loop().run_in_executor(None, watch_collection_sync, collection_name, name, loop)
 
-
-def start_async_loop(loop):
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
-
-
 async def watch_all_collections(loop):
     tasks = [
         watch_collection(read_EmailMessages_collection, 'email_messages', loop),
@@ -343,9 +338,9 @@ def get_latest_date(collection, date_field):
         return latest_document[date_field]
     return None
 
-# Updated process_initial_documents function
 async def process_initial_documents():
-    print("initial data analys started")
+    print("initial data analysis started")
+
     async def process_email(latest_date):
         query = {"datetime": {"$gte": latest_date}} if latest_date else {}
         email_messages = read_EmailMessages_collection.find(query)
@@ -404,33 +399,39 @@ async def process_initial_documents():
         query = {"date": {"$gte": latest_date}} if latest_date else {}
         social_keywords = social_IdentifiedKeywords_collection.find(query)
         for keyword in social_keywords:
-            keywords = keyword["identified_keyword"]
-            if not isinstance(keywords, list):
-                keywords = [keywords]
+            if "identified_keyword" in keyword:
+                keywords = keyword["identified_keyword"]
+                if not isinstance(keywords, list):
+                    keywords = [keywords]
 
-            social_data = SocialData(
-                time=keyword["date"].isoformat(),
-                our_sentiment_score=0.0,
-                keywords=keywords,
-                products=[]
-            )
-            await receive_social_data(social_data)
+                social_data = SocialData(
+                    time=keyword["date"].isoformat(),
+                    our_sentiment_score=0.0,
+                    keywords=keywords,
+                    products=[]
+                )
+                await receive_social_data(social_data)
+            else:
+                print(f"Skipping document without 'identified_keyword': {keyword}")
 
     async def process_social_products(latest_date):
         query = {"date": {"$gte": latest_date}} if latest_date else {}
         social_products = social_IdentifiedProducts_collection.find(query)
         for product in social_products:
-            products = product["identified_product"]
-            if not isinstance(products, list):
-                products = [products]
+            if "identified_product" in product:
+                products = product["identified_product"]
+                if not isinstance(products, list):
+                    products = [products]
 
-            social_data = SocialData(
-                time=product["date"].isoformat(),
-                our_sentiment_score=0.0,
-                keywords=[],
-                products=products
-            )
-            await receive_social_data(social_data)
+                social_data = SocialData(
+                    time=product["date"].isoformat(),
+                    our_sentiment_score=0.0,
+                    keywords=[],
+                    products=products
+                )
+                await receive_social_data(social_data)
+            else:
+                print(f"Skipping document without 'identified_product': {product}")
 
     async def process_email_issue(latest_date):
         query = {"start_time": {"$gte": latest_date}} if latest_date else {}
@@ -462,11 +463,6 @@ async def process_initial_documents():
     latest_email_date = get_latest_date(emailDB_collection, "datetime")
     latest_call_date = get_latest_date(callDB_collection, "call_date")
     latest_social_date = get_latest_date(socialDB_collection, "date")
-    # latest_social_subcomment_date = get_latest_date(social_SubComment_collection, "date")
-    # latest_social_keyword_date = get_latest_date(social_IdentifiedKeywords_collection, "date")
-    # latest_social_product_date = get_latest_date(social_IdentifiedProducts_collection, "date")
-    # latest_email_issue_date = get_latest_date(read_Issues_collection, "start_time")
-    # latest_email_inquiry_date = get_latest_date(read_Inquiries_collection, "start_time")
 
     await asyncio.gather(
         process_email(latest_email_date),
@@ -478,3 +474,15 @@ async def process_initial_documents():
         process_email_issue(latest_email_date),
         process_email_inquiry(latest_email_date)
     )
+
+
+async def start_async_processes(loop):
+    await process_initial_documents()
+    print("initial data analysis ended")
+    await watch_all_collections(loop)
+
+
+loop = asyncio.new_event_loop()
+t = Thread(target=lambda: asyncio.run(start_async_processes(loop)), daemon=True)
+t.start()
+

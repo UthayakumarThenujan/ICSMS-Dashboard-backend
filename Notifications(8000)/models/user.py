@@ -11,10 +11,16 @@ class Notification(BaseModel):
     status: str = "UNREAD" #READ,UNREAD
 
 class UpdateNoti(BaseModel):
-    id: List[Dict[str, str]]
+    id: str
     # email: str
     # alert: str
     # status: str
 
     # class Config:
     #     arbitrary_types_allowed = True
+
+class CallData(BaseModel):
+    id: str = Field(default_factory=lambda: str(ObjectId()))
+    title: str
+    description: str
+    datetime: str
