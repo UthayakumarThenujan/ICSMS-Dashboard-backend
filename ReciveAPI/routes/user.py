@@ -51,6 +51,10 @@ def process_email_data(email_message,name):
             "Sentiment": {sentiment: email_message['our_sentiment_score']},
             "sender": email_message['sender'],
             "topic": email_message['topics'],
+            "issue_type": [],
+            "inquiry_type": [],
+            "products":[],
+
         }
     elif(name=='email_inquiry'):
         sentiment = calculate_sentiment(email_message['sentiment_score'])
@@ -58,8 +62,10 @@ def process_email_data(email_message,name):
                     "time": email_message['time'],
                     "Sentiment": {sentiment: email_message['sentiment_score']},
                     "status": email_message['status'],
+                    "issue_type": [],
                     "inquiry_type": email_message['inquiry_type'],
-                    "products":email_message['products']
+                    "products":email_message['products'],
+                    "topic":[]
                 }
     elif(name=='email_issue'):
         sentiment = calculate_sentiment(email_message['sentiment_score'])
@@ -68,7 +74,9 @@ def process_email_data(email_message,name):
                     "Sentiment": {sentiment: email_message['sentiment_score']},
                     "status": email_message['status'],
                     "issue_type": email_message['issue_type'],
-                    "products":email_message['products']
+                    "inquiry_type": [],
+                    "products":email_message['products'],
+                    "topic":[]
                 }
 
 def process_call_data(call_message):
@@ -95,14 +103,16 @@ async def receive_email_data(email_message: EmailData,name):
     date_str = email_message.time.split("T")[0]
     existing_data = emailDB_collection.find_one({"Date": date_str})
     processed_data = process_email_data(email_message.dict(),name)
-
+    
     def is_duplicate(entry, new_entry):
         if(name=='email_messages'):
             return {
                 entry['time']== new_entry['time'] and
                 entry["Sentiment"]== new_entry['Sentiment'] and
                 entry["sender"]== new_entry['sender'] and 
-                entry["topic"]== new_entry['topic']
+                entry["topic"]== new_entry['topic'] and entry["inquiry_type"]== []
+                and entry["issue_type"]== []
+                and entry["products"]== [] 
             }
         elif(name=='email_inquiry'):
             return {
@@ -110,7 +120,8 @@ async def receive_email_data(email_message: EmailData,name):
                 entry["Sentiment"]== new_entry['Sentiment'] and
                 entry["status"]== new_entry['status'] and 
                 entry["inquiry_type"]== new_entry['inquiry_type'] and
-                entry["products"]== new_entry['products']
+                entry["products"]== new_entry['products'] and
+                entry["topic"]== [] and entry["issue_type"]== []
                     }
         elif(name=='email_issue'):
             return {
@@ -118,7 +129,8 @@ async def receive_email_data(email_message: EmailData,name):
                 entry["Sentiment"]== new_entry['Sentiment'] and
                 entry["status"]== new_entry['status'] and 
                 entry["issue_type"]== new_entry['issue_type'] and
-                entry["products"]== new_entry['products']
+                entry["products"]== new_entry['products'] and
+                entry["topic"]== [] and entry["inquiry_type"]== []
                     }
 
     if existing_data:
@@ -129,7 +141,7 @@ async def receive_email_data(email_message: EmailData,name):
             emailDB_collection.update_one(
                 {"_id": ObjectId(existing_data['_id'])}, {"$set": existing_data}
             )
-            
+
     else:
         new_data = {"Date": date_str, "data": [processed_data]}
         emailDB_collection.insert_one(new_data)
@@ -442,7 +454,7 @@ async def process_initial_documents():
                 status=issue["status"],
                 issue_type=issue["issue_type"],
                 sentiment_score=issue["sentiment_score"],
-                products=issue["products"]
+                products=issue["products"],
             )
             await receive_email_data(email_data, 'email_issue')
 

@@ -16,6 +16,63 @@ from pymongo import ASCENDING
 
 gridChange = False
 
+
+def verifyToken(event):
+    token = event['token']
+    
+    # Verify the token structure
+    if token.count('.') != 2:
+        print('Invalid token structure')
+        return False
+    
+    # get the kid from the headers prior to verification
+    try:
+        headers = jwt.get_unverified_headers(token)
+    except jwt.JWTError as e:
+        print(f"Error decoding token headers: {e}")
+        return False
+
+    kid = headers['kid']
+    # search for the kid in the downloaded public keys
+    key_index = -1
+    for i in range(len(keys)):
+        if kid == keys[i]['kid']:
+            key_index = i
+            break
+    if key_index == -1:
+        print('Public key not found in jwks.json')
+        return False
+
+    # construct the public key
+    public_key = jwk.construct(keys[key_index])
+
+    # get the last two sections of the token,
+    # message and signature (encoded in base64)
+    message, encoded_signature = str(token).rsplit('.', 1)
+    # decode the signature
+    decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
+    # verify the signature
+    if not public_key.verify(message.encode("utf8"), decoded_signature):
+        print('Signature verification failed')
+        return False
+    print('Signature successfully verified')
+    # since we passed the verification, we can now safely
+    # use the unverified claims
+    claims = jwt.get_unverified_claims(token)
+    # additionally we can verify the token expiration
+    if time.time() > claims['exp']:
+        print('Token is expired')
+        return False
+    # and the Audience  (use claims['client_id'] if verifying an access token)
+    if claims['aud'] != app_client_id:
+        # print('Token was not issued for this audience')
+        return False
+    # now we can use the claims
+    # print(claims)
+    return claims
+
+
+
 async def get_websocket_user(websocket: WebSocket):
     token = websocket.query_params.get("token")
     if not token:
@@ -73,6 +130,59 @@ async def new_widget(request: WidgetRequest, email: str = Depends(get_current_us
 async def widgetsUser(email: str = Depends(get_current_user)):
     global gridChange
     try:
+        widgets_details = WidgetEntry(widget_collection.find({"email": email}))
+        if(len(widgets_details)==0):
+            default_widgets = [
+                {
+                  "title": "line-all",
+                  "email": email,
+                  "chartType": "Line Chart",
+                  "grid": { "cols": 4, "rows": 3, "x": 0 , "y": 0 },
+                  "keywords": [],
+                  "sources": ["email", "social", "call"],
+                  "status": "show",
+                  "topics": [],
+                  "xAxis": "date",
+                  "yAxis": "sentiment-count"
+                },
+                {
+                  "title": "bar-email",
+                  "email": email,
+                  "chartType": "Bar Chart",
+                  "grid": { "cols": 3, "rows": 3, "x": 4 , "y": 3 },
+                  "keywords": [],
+                  "sources": ["email"],
+                  "status": "show",
+                  "topics": [],
+                  "xAxis": "topics",
+                  "yAxis": "sentiment-count"
+                },
+                {
+                  "title": "line-email",
+                  "chartType": "Line Chart",
+                  "email": email,
+                  "grid": { "cols": 4, "rows": 3, "x": 0, "y": 4 },
+                  "keywords": [],
+                  "sources": ["email"],
+                  "status": "show",
+                  "topics": [],
+                  "xAxis": "date",
+                  "yAxis": "sentiment-count"
+                },
+                {
+                  "title": "bar-sources",
+                  "chartType": "Bar Chart",
+                  "email": email,
+                  "grid": { "cols": 3, "rows": 2, "x": 3 },
+                  "keywords": [],
+                  "sources": ["email", "social", "call"],
+                  "status": "show",
+                  "topics": [],
+                  "xAxis": "topics",
+                  "yAxis": "sentiment-count"
+                },
+            ]
+            widget_collection.insert_many(default_widgets)
         widgets_details = WidgetEntry(widget_collection.find({"email": email}))
         return widgets_details
     except HTTPException:
@@ -193,61 +303,6 @@ async def delete_widget(id: str,email: str = Depends(get_current_user)):
 #     # now we can use the claims
 #     # print(claims)
 #     return claims
-
-def verifyToken(event):
-    token = event['token']
-    
-    # Verify the token structure
-    if token.count('.') != 2:
-        print('Invalid token structure')
-        return False
-    
-    # get the kid from the headers prior to verification
-    try:
-        headers = jwt.get_unverified_headers(token)
-    except jwt.JWTError as e:
-        print(f"Error decoding token headers: {e}")
-        return False
-
-    kid = headers['kid']
-    # search for the kid in the downloaded public keys
-    key_index = -1
-    for i in range(len(keys)):
-        if kid == keys[i]['kid']:
-            key_index = i
-            break
-    if key_index == -1:
-        print('Public key not found in jwks.json')
-        return False
-
-    # construct the public key
-    public_key = jwk.construct(keys[key_index])
-
-    # get the last two sections of the token,
-    # message and signature (encoded in base64)
-    message, encoded_signature = str(token).rsplit('.', 1)
-    # decode the signature
-    decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
-    # verify the signature
-    if not public_key.verify(message.encode("utf8"), decoded_signature):
-        print('Signature verification failed')
-        return False
-    print('Signature successfully verified')
-    # since we passed the verification, we can now safely
-    # use the unverified claims
-    claims = jwt.get_unverified_claims(token)
-    # additionally we can verify the token expiration
-    if time.time() > claims['exp']:
-        print('Token is expired')
-        return False
-    # and the Audience  (use claims['client_id'] if verifying an access token)
-    if claims['aud'] != app_client_id:
-        # print('Token was not issued for this audience')
-        return False
-    # now we can use the claims
-    # print(claims)
-    return claims
-
 
 import asyncio
 connected_clients = []

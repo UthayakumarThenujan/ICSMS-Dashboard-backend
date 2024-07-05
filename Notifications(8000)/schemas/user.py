@@ -23,17 +23,27 @@ def usersEntity(entity) -> list:
 
 def serializeDict(item) -> dict:
     return {
-         "id": str(item["_id"]),
-        "email": item["email"],
-        "alert": item["alert"],
-        "status": item["status"],
-        "created_at": item["created_at"]
+        "_id": str(item["_id"]),
+        "title": str(item["title"]),
+        "description": str(item["description"]),
+        "datetime": str(item["date"]),  # Accessing the date field inside the object
     }
 
 
 def serializeList(entity) -> list:
     return [serializeDict(item) for item in entity]
 
+def serializeDictcall(item) -> dict:
+    return {
+        "_id": str(item["_id"]),
+        "title": str(item["title"]),
+        "description": str(item["description"]),
+        "datetime": str(item["datetime"]),
+    }
+
+
+def serializeListcall(entity) -> list:
+    return [serializeDictcall(item) for item in entity]
 
 # def serializeDict(a) -> dict:
 #     return {
