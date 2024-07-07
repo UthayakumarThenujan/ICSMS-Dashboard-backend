@@ -15,8 +15,11 @@ from config.db import (
     social_IdentifiedKeywords_collection,
     social_IdentifiedProducts_collection,
     read_Inquiries_collection,
-    read_Issues_collection
+    read_Issues_collection,
+    social_CommentSentiment_collection,
+    social_SubCommentSentiment_collection
 )
+from socialMediaAveScore import calculate_avg_s_score
 from schemas.user import usersEntity
 from bson import ObjectId
 import asyncio
@@ -290,15 +293,19 @@ async def process_changed_document(collection, changed_id, name):
                 products=changed_document['products']
             )
             await receive_email_data(email_data)
-        elif name == "social_comment" or name == "social_subcomment":
-            print(changed_document["date"].isoformat())
-            social_data = SocialData(
-                time=changed_document["date"].isoformat(),
-                our_sentiment_score=changed_document["s_score"],
-                keywords=[],
-                products=[]
-            )
-            await receive_social_data(social_data)
+        elif name == "social_comment":
+            changed_id = changed_document["post_id"]
+            # Call calculate_avg_s_score with the changed ID and get the date scores
+            date_scores = await calculate_avg_s_score(changed_id)
+            # Iterate over the date scores and create SocialData instances
+            for date, score in date_scores.items():
+                social_data = SocialData(
+                    time=date.isoformat(),
+                    our_sentiment_score=score,
+                    keywords=[],
+                    products=[]
+                )
+                await receive_social_data(social_data)
         elif name == "social_keywords":
             print(changed_document["date"].isoformat())
             keywords = changed_document["identified_keyword"]
@@ -335,7 +342,6 @@ async def watch_all_collections(loop):
         watch_collection(read_EmailMessages_collection, 'email_messages', loop),
         watch_collection(call_collection, 'call_data', loop),
         watch_collection(social_Comment_collection, "social_comment", loop),
-        watch_collection(social_SubComment_collection, 'social_subcomment', loop),
         watch_collection(social_IdentifiedKeywords_collection, 'social_keywords', loop),
         watch_collection(social_IdentifiedProducts_collection, 'social_products', loop),
         watch_collection(read_Inquiries_collection, 'email_inquiry', loop),
@@ -383,29 +389,35 @@ async def process_initial_documents():
 
     async def process_social_comments(latest_date):
         query = {"date": {"$gte": latest_date}} if latest_date else {}
-        social_comments = social_Comment_collection.find(query)
+        projection = {"post_id": 1}  # Include only the _id field
+        social_comments = social_Comment_collection.find(query, projection)
+        
         for comment in social_comments:
-            if "s_score" in comment:
-                social_data = SocialData(
-                    time=comment["date"].isoformat(),
-                    our_sentiment_score=comment["s_score"],
-                    keywords=[],
-                    products=[]
-                )
-                await receive_social_data(social_data)
+            if "post_id" in comment:
+                post_id = comment["post_id"]
+                date_scores = await calculate_avg_s_score(post_id)
+            if date_scores:
+                for date, score in date_scores.items():
+                    social_data = SocialData(
+                        time=date.isoformat(),
+                        our_sentiment_score=score,
+                        keywords=[],
+                        products=[]
+                    )
+                    await receive_social_data(social_data)
 
-    async def process_social_subcomments(latest_date):
-        query = {"date": {"$gte": latest_date}} if latest_date else {}
-        social_subcomments = social_SubComment_collection.find(query)
-        for subcomment in social_subcomments:
-            if "s_score" in subcomment:
-                social_data = SocialData(
-                    time=subcomment["date"].isoformat(),
-                    our_sentiment_score=subcomment["s_score"],
-                    keywords=[],
-                    products=[]
-                )
-                await receive_social_data(social_data)
+    # async def process_social_comments(latest_date):
+    #     query = {"date": {"$gte": latest_date}} if latest_date else {}
+    #     social_comments = social_Comment_collection.find(query)
+    #     for comment in social_comments:
+    #         if "s_score" in comment:
+    #             social_data = SocialData(
+    #                 time=comment["date"].isoformat(),
+    #                 our_sentiment_score=comment["s_score"],
+    #                 keywords=[],
+    #                 products=[]
+    #             )
+    #             await receive_social_data(social_data)
 
     async def process_social_keywords(latest_date):
         query = {"date": {"$gte": latest_date}} if latest_date else {}
@@ -480,7 +492,6 @@ async def process_initial_documents():
         process_email(latest_email_date),
         process_calls(latest_call_date),
         process_social_comments(latest_social_date),
-        process_social_subcomments(latest_social_date),
         process_social_keywords(latest_social_date),
         process_social_products(latest_social_date),
         process_email_issue(latest_email_date),

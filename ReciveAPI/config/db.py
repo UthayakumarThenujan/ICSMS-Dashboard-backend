@@ -60,6 +60,7 @@ read_EmailMessages_collection = client_Email_DB["Emails"]
 read_Inquiries_collection = client_Email_DB["Inquiries"]
 read_Issues_collection = client_Email_DB["Issues"]
 
+
 social_team = "mongodb+srv://team-byte_bridges:backenddb@cluster0.pocr4yq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 DBname= "icsms-social_media"
 # Create a new client and connect to the server
@@ -75,6 +76,10 @@ except Exception as e:
 client_social_DB = client_social_team[DBname]
 
 social_Comment_collection = client_social_DB["Comment"]
+social_CommentSentiment_collection = client_social_DB["CommentSentiment"]
+
 social_SubComment_collection = client_social_DB["SubComment"]
+social_SubCommentSentiment_collection = client_social_DB["SubCommentSentiment"]
+
 social_IdentifiedKeywords_collection = client_social_DB["IdentifiedKeywords"]
 social_IdentifiedProducts_collection = client_social_DB["IdentifiedProducts"]
