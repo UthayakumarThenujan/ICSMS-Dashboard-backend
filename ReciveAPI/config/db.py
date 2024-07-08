@@ -26,7 +26,8 @@ social_db = client_emailDashboard.SocialMedia
 socialDB_collection = social_db["GeneratedData"]
 
 
-call_team = "mongodb+srv://erandaabewardhana:19765320@cluster0.7coezqv.mongodb.net/users?retryWrites=true&w=majority"
+# call_team = "mongodb+srv://erandaabewardhana:19765320@cluster0.7coezqv.mongodb.net/users?retryWrites=true&w=majority"
+call_team = "mongodb+srv://ErandaAbewardhana:fq3FNNVZeCDqcuKQ@icsms.f7srrct.mongodb.net/?retryWrites=true&w=majority&appName=ICSMS"
 
 # Create a new client and connect to the server
 client_call_team = MongoClient(call_team, server_api=ServerApi('1'))
@@ -38,7 +39,7 @@ try:
 except Exception as e:
     print(e)
 
-client_call_DB = client_call_team.call_recordings
+client_call_DB = client_call_team.Call_Recordings
 call_collection = client_call_DB["analytics"]
 
 

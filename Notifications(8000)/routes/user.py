@@ -220,13 +220,18 @@ async def notify_notification_clients_changed(collection,id, name):
     if changed_document:
         print(f"Changed document found: {changed_document}")
         if name == "call":
+
             message_datetime = changed_document["datetime"]
+            if isinstance(message_datetime, str):
+                message_datetime = parser.isoparse(message_datetime)
+
             call_data = CallData(
                 datetime=message_datetime.isoformat(),
-                id=str(message["_id"]),
-                title=message["title"],
-                description=message["description"],
+                id=str(changed_document["_id"]),
+                title=changed_document["title"],
+                description=changed_document["description"],
             )
+            print("call", call_data.json())
             await receive_call_data(call_data, 'call_messages')
         if name == "email":
             message_datetime = changed_document["time"]
@@ -458,14 +463,23 @@ async def receive_email_data(call_message, name):
 async def process_initial_documents():
     print("Initial data analysis started")
     async def process_call(latest_date):
-        query = {"datetime": {"$gte": latest_date}} if latest_date else {}
-        call_messages = serializeListcall(call_collection.find(query))
-        print(latest_date)
+        if(latest_date):
+            latest_date = parser.isoparse(latest_date).astimezone(pytz.utc)
+            query = {"datetime": {"$gte": latest_date}} if latest_date else {}
+            call_messages_cursor = serializeListcall(call_collection.find(query))
+            call_messages = []
+        else:
+            call_messages_cursor = serializeListcall(call_collection.find())
+            call_messages = []
+        
+        for message in call_messages_cursor:
+            call_messages.append(message)
+
         for message in call_messages:
             # Convert the datetime string to a datetime object if necessary
             message_datetime = message["datetime"]
             if isinstance(message_datetime, str):
-                message_datetime = dateutil_parse(message_datetime)
+                message_datetime = parser.isoparse(message_datetime)
 
             call_data = CallData(
                 datetime=message_datetime.isoformat(),
