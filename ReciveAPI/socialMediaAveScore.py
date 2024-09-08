@@ -2,7 +2,7 @@ from collections import defaultdict
 from pymongo import MongoClient
 from bson import ObjectId
 
-from config.db import (
+from config.social_db import (
     social_Comment_collection,
     social_SubComment_collection,
     social_CommentSentiment_collection,
@@ -61,12 +61,3 @@ async def calculate_avg_s_score(post_id: ObjectId) -> dict:
         avg_sentiment_by_date[date] = sum(sentiments) / len(sentiments)
 
     return avg_sentiment_by_date
-
-# Usage
-# if __name__ == "__main__":
-#     post_id = ObjectId("667e17c64371e83454344b57")
-#     date_scores = calculate_avg_s_score(post_id)
-#     if date_scores:
-#         for date, score in date_scores.items():
-#             print(date.isoformat())
-#             print(score)

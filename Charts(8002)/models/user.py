@@ -1,16 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional,List,Dict
-from starlette.requests import Request
-
-
-class UserInput(BaseModel):
-    email: str
-
-
-class Call_Value(BaseModel):
-    positive: int
-    negative: int
-    average: int
 
 class Widget(BaseModel):
     title: str
@@ -26,12 +15,6 @@ class Widget(BaseModel):
 class WidgetRequest(BaseModel):
     widget: Widget
 
-class Token(BaseModel):
-    token:str
-
-class BarChart(BaseModel):
-    collections:List[str]
-    date_range:List[str]
 
 class GridItemUpdateRequest(BaseModel):
     id: str

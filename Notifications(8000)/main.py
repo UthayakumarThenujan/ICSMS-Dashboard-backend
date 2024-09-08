@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes.user import user
+from routes.router import router
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 # 8000
@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user)
+app.include_router(router)
 
 if __name__ == "__main__":
     # Specify the host and port here

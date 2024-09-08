@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes.user import router, watch_all_collections, process_initial_documents
+from routes.router import router
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional,List,Dict
-from starlette.requests import Request
-from datetime import datetime
+from typing import List
+
 
 class Issue(BaseModel):
     time: str

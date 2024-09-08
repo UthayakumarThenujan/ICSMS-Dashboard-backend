@@ -1,25 +1,17 @@
 from pydantic import BaseModel, Field
-from typing import Optional
-from starlette.requests import Request
 from bson import ObjectId
-from typing import List,Dict
-from datetime import datetime
-class Notification(BaseModel):
+
+
+class Notification(BaseModel): # front end notification data structure
     email: str
     alert : str
     created_at : None
     status: str = "UNREAD" #READ,UNREAD
 
-class UpdateNoti(BaseModel):
+class UpdateNoti(BaseModel): #upadate notifications data structure
     id: str
-    # email: str
-    # alert: str
-    # status: str
 
-    # class Config:
-    #     arbitrary_types_allowed = True
-
-class CallData(BaseModel):
+class CallData(BaseModel): # Call team data notification structure
     id: str = Field(default_factory=lambda: str(ObjectId()))
     title: str
     description: str
