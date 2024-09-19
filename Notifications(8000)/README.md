@@ -7,16 +7,16 @@ The project is organized into the following main folders:
 1. config/
 Description: This folder contains the configuration for connecting to MongoDB Atlas and handling API settings.
 Key Files:
-   db.py: MongoDB Atlas connection setup to Main Dashboard DB.
-   call_db.py: MongoDB Atlas connection setup to Call DB.
-   email_db.py: MongoDB Atlas connection setup to Email DB.
-   social_db.py: MongoDB Atlas connection setup to Social DB.
+   1.db.py: MongoDB Atlas connection setup to Main Dashboard DB.
+   2.call_db.py: MongoDB Atlas connection setup to Call DB.
+   3.email_db.py: MongoDB Atlas connection setup to Email DB.
+   4.social_db.py: MongoDB Atlas connection setup to Social DB.
 
-3. models/
+2. models/
 Description: Defines the structure of the data formats using FastAPI's BaseModel.
 Key Files:  user.py: Contains the data models used across the API.
 
-4. routes/
+3. routes/
 Description: Contains the main routes that bridge the frontend with the backend.
 Key Files:
   1. call/
