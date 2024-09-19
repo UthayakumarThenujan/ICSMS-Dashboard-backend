@@ -19,7 +19,7 @@ Key Files:
   notify.py: Handles WebSocket notifications to users.
   token_verification.py: Verifies AWS Cognito tokens for user authentication.
 
-4 . schemas/
+4. schemas/
 Description: This folder contains the data transformation functions for handling MongoDB data in the API.
 Key Files:
   user.py: Defines functions for transforming data between API and MongoDB.
