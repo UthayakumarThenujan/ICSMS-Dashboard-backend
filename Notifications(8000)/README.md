@@ -4,40 +4,71 @@ This project is a backend API service built with FastAPI, integrated with MongoD
 Folder Structure
 The project is organized into the following main folders:
 
-1. config/
-Description: This folder contains the configuration for connecting to MongoDB Atlas and handling API settings.
-Key Files:
-   1.db.py: MongoDB Atlas connection setup to Main Dashboard DB.
-   2.call_db.py: MongoDB Atlas connection setup to Call DB.
-   3.email_db.py: MongoDB Atlas connection setup to Email DB.
-   4.social_db.py: MongoDB Atlas connection setup to Social DB.
+1.config/
 
-2. models/
+Description: This folder contains the configuration for connecting to MongoDB Atlas and handling API settings.
+
+Key Files:
+
+   db.py: MongoDB Atlas connection setup to Main Dashboard DB.
+   
+   call_db.py: MongoDB Atlas connection setup to Call DB.
+   
+   email_db.py: MongoDB Atlas connection setup to Email DB.
+   
+   social_db.py: MongoDB Atlas connection setup to Social DB.
+   
+
+
+
+2.models/
+
 Description: Defines the structure of the data formats using FastAPI's BaseModel.
+
 Key Files:  user.py: Contains the data models used across the API.
 
-3. routes/
+3.routes/
+
 Description: Contains the main routes that bridge the frontend with the backend.
+
 Key Files:
+
   1. call/
-       call_preprocess.py: call notification data structures handling
-       receive_call.py: call notifications receive from call database 
+     
+       call_preprocess.py: call notification data structures handling.
+     
+       receive_call.py: call notifications receive from call database .
+     
   2. email/
-       email_preprocess.py: email notification data structures handling
-       receive_email.py: email notifications receive from call database 
+
+       email_preprocess.py: email notification data structures handling.
+     
+       receive_email.py: email notifications receive from call database.
+     
   3. social/
+     
        social_preprocess.py: social notification data structures handling
+     
        receive_social.py: social notifications receive from call database
      
+     
   initial_process.py: before monitoring watch functions, old datas are check and write in Mongo DB.
+  
   route.py: The main routing file handling all primary API requests.
+  
   notify.py: Handles WebSocket notifications to users.
+  
   token_verification.py: Verifies AWS Cognito tokens for user authentication.
+  
 
-4 . schemas/
+4.schemas/
+
 Description: This folder contains the data transformation functions for handling MongoDB data in the API.
+
 Key Files:
+
   user.py: Defines functions for transforming data between API and MongoDB.
+  
   
 Main File
 main.py
